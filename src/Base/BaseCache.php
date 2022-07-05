@@ -16,7 +16,7 @@ abstract class BaseCache
 {
     use BaseTrait;
     use RedisTrait;
-
+    
     /**
      * Redis连接池
      * @var string
@@ -33,7 +33,7 @@ abstract class BaseCache
     /**
      * @var int 缓存有效时间，单位：秒
      */
-    protected $ttl = 365 * 24 * 60 * 60;
+    protected int $ttl = 365 * 24 * 60 * 60;
     /**
      * @var mixed 详情数据
      */
@@ -52,7 +52,7 @@ abstract class BaseCache
      * @var array 整型字段
      */
     protected array $intFieldArr = [];
-
+    
     /**
      * 是否允许pk为空
      * @var bool
@@ -64,59 +64,59 @@ abstract class BaseCache
      * @var bool
      */
     protected bool $serialize = false;
-
+    
     public function __construct($pk = '')
     {
         $this->pk = $pk;
-
+        
         $this->setCacheKey();
     }
-
+    
     /**
      * 设置缓存key
      * @return mixed
      */
     abstract protected function setCacheKey();
-
+    
     /**
      * 从数据库中查询数据
      * @return mixed
      */
     abstract protected function fromDb();
-
+    
     /**
      * 更新或重构缓存额外处理
      * @param mixed $data
      */
     protected function dealUpdateCacheExt(&$data){}
-
+    
     /**
      * 额外处理，比如ES处理
      */
     protected function saveCacheExt(){}
-
+    
     /**
      * 额外处理，比如ES处理
      */
     protected function delCacheExt(){}
-
+    
     /**
      * 保存前数据处理
      * @param $data
      * @return void
      */
     protected function dealSaveCacheExt(&$data){}
-
+    
     /**
      * 清除所有相关缓存
      */
     public static function clearAll(){}
-
+    
     /**
      * 重构所有相关缓存
      */
     public static function reset(){}
-
+    
     /**
      * 获取redis连接池代理
      * @param string
@@ -125,7 +125,7 @@ abstract class BaseCache
     {
         $this->redisPool = $redisPool;
     }
-
+    
     /**
      * 获取redis连接池代理
      * @return string
@@ -134,7 +134,7 @@ abstract class BaseCache
     {
         return $this->redisPool;
     }
-
+    
     /**
      * @param string $handle
      * @return void
@@ -143,7 +143,7 @@ abstract class BaseCache
     {
         $this->handle = $handle;
     }
-
+    
     /**
      *
      * @return string
@@ -152,7 +152,7 @@ abstract class BaseCache
     {
         return $this->handle;
     }
-
+    
     /**
      * @return int|string
      */
@@ -160,7 +160,7 @@ abstract class BaseCache
     {
         return $this->pk;
     }
-
+    
     /**
      * @param int|string $pk
      * @return void
@@ -169,7 +169,7 @@ abstract class BaseCache
     {
         $this->pk = $pk;
     }
-
+    
     /**
      * 判断PK是否为空
      * @return string
@@ -181,7 +181,7 @@ abstract class BaseCache
         }
         return $this->pk;
     }
-
+    
     /**
      * 是否为空数据
      * @return bool
@@ -193,10 +193,10 @@ abstract class BaseCache
             $this->detail = null;
             return true;
         }
-
+        
         return false;
     }
-
+    
     /**
      * 获取数据详情。
      * 优先从缓存获取，不存在则从数据库中获取再存入缓存中
@@ -209,9 +209,9 @@ abstract class BaseCache
         if (!$this->hasPk()) {
             return null;
         }
-
+        
         $this->getCache($columns);
-
+        
         if (empty($this->detail)) {
             $this->getDetailWhereNoCache();
             if ($columns) {
@@ -221,12 +221,12 @@ abstract class BaseCache
         /*else {
             //$this->ttl(); // 不再自动续期
         }*/
-
+        
         $this->dealDetailExt($this->detail);
         empty($this->detail) && ($this->detail = []);
         return $this->detail;
     }
-
+    
     /**
      * 判别缓存是否存在
      * @return bool
@@ -238,7 +238,7 @@ abstract class BaseCache
         if (is_bool($aRet)) return $aRet;
         return $aRet > 0;
     }
-
+    
     /**
      * 当缓存无数据时，从数据库获取数据
      * @return mixed|null
@@ -254,7 +254,7 @@ abstract class BaseCache
             $this->redisPool,
             $this->cacheKey,
             5,
-            5,
+            10,
             function () {
                 $this->getCache();
                 if (!$this->detail && !$this->isNull($this->cacheKey)) {
@@ -262,10 +262,10 @@ abstract class BaseCache
                 }
             }
         );
-
+        
         return $this->detail;
     }
-
+    
     /**
      * 获取指定字段
      * @param array $columns
@@ -281,7 +281,7 @@ abstract class BaseCache
         $detail = $this->getDetail($columns);
         return $detail ?: null;
     }
-
+    
     /**
      * 从缓存中获取数据
      * @param array $columns
@@ -323,7 +323,7 @@ abstract class BaseCache
             }
         }
     }
-
+    
     /**
      * 获取某字段的缓存值
      * @param $field
@@ -335,12 +335,12 @@ abstract class BaseCache
         if (!$this->hasPk()) {
             return null;
         }
-
+        
         $this->getDetail();
-
+        
         return $this->detail[$field] ?? null;
     }
-
+    
     /**
      * @param $name
      * @return mixed|null
@@ -350,7 +350,7 @@ abstract class BaseCache
     {
         return $this->field($name);
     }
-
+    
     /**
      * @param $name
      * @param $value
@@ -361,12 +361,12 @@ abstract class BaseCache
     {
         return $this->updateFieldCache($name, $value);
     }
-
+    
     public function __isset($name)
     {
     
     }
-
+    
     /**
      * 数据额外处理
      * @param $detail
@@ -377,14 +377,16 @@ abstract class BaseCache
         $this->intFieldArr = array_merge($this->intFieldArr, [
             'status', 'sort'        //'created_at', 'updated_at',
         ]);
-
+        
         foreach ($this->intFieldArr as $field)
         {
             isset($detail[$field]) && $detail[$field] = (int)$detail[$field];
         }
-        unset($detail['deleted_at']);
+        if (isset($detail['deleted_at'])) {
+            unset($detail['deleted_at']);
+        }
     }
-
+    
     /**
      * 清除缓存及内存中的数据
      * @return int
@@ -408,9 +410,9 @@ abstract class BaseCache
         if (!$this->hasPk()) {
             return null;
         }
-
+        
         $this->clearCache();
-
+        
         $object = $this->fromDb();
         if (!$object) {
             //不存在，则直接置为null
@@ -421,18 +423,18 @@ abstract class BaseCache
                 if (get_class($object) == 'stdClass') {
                     $this->detail = get_object_vars($object);
                 } else {
-                     $this->detail = json_decode($object, true);
+                    $this->detail = json_decode($object, true);
                 }
             } else {
                 $this->detail = $object;
             }
         }
         $this->dealUpdateCacheExt($this->detail);
-
+        
         $this->saveCache();
     }
-
-
+    
+    
     /**
      * 保存数据到缓存中
      * @throws
@@ -443,9 +445,9 @@ abstract class BaseCache
             return;
         }
         $this->dealSaveCacheExt($this->detail);
-
+        
         $this->removeNull($this->cacheKey);
-
+        
         if ($this->getHandle() == 'String') {
             if ($this->serialize) {
                 $data = serialize($this->detail);
@@ -457,10 +459,10 @@ abstract class BaseCache
             self::getRedis($this->redisPool)->hMSet($this->cacheKey, $this->detail);
         }
         $this->ttl();
-
+        
         $this->saveCacheExt();
     }
-
+    
     /**
      * 更新缓存过期时间
      * @throws
@@ -470,17 +472,17 @@ abstract class BaseCache
         if ($this->ttl <= 0) {
             return;
         }
-
+        
         if ($this->isDetailNull()) {
             $ttl = 60;
         } else {
             //过期时间加上随机数，解决缓存雪崩问题
-            $ttl = $this->ttl + random_int(0, 1000);
+            $ttl = $this->ttl + random_int(0, 10);
         }
-
+        
         self::getRedis($this->redisPool)->expire($this->cacheKey, $ttl);
     }
-
+    
     /**
      * 是否存在缓存
      * @return bool|int
@@ -501,25 +503,25 @@ abstract class BaseCache
         if (!$this->hasPk()) {
             return null;
         }
-
+        
         if ($this->hasCache()) {
-            $this->getCache();
-
+            $this->getCache([$field]);
+            
             if (!isset($this->detail[$field])) {
                 return false;
             }
             $this->detail[$field] = self::getRedis($this->redisPool)->hIncrBy($this->cacheKey, $field, $incr);
-
+            
             $data = [$field => $this->detail[$field]];
             $this->dealUpdateCacheExt($data);
-
+            
             $this->ttl();
-
+            
             $this->saveCacheExt();
         } else {
             $this->buildCache();
         }
-
+        
         return $this->detail[$field];
     }
     
@@ -534,28 +536,28 @@ abstract class BaseCache
         if (!$this->hasPk()) {
             return null;
         }
-
+        
         if ($this->hasCache()) {
-            $this->getCache();
-
+            $this->getCache([$field]);
+            
             if (!isset($this->detail[$field])) {
                 return false;
             }
             $this->detail[$field] = self::getRedis($this->redisPool)->hIncrByFloat($this->cacheKey, $field, $incr);
-
+            
             $data = [$field => $this->detail[$field]];
             $this->dealUpdateCacheExt($data);
-
+            
             $this->ttl();
-
+            
             $this->saveCacheExt();
         } else {
             $this->buildCache();
         }
-
+        
         return $this->detail[$field];
     }
-
+    
     /**
      * 更新某个字段的缓存
      * @param string $field
@@ -568,13 +570,13 @@ abstract class BaseCache
         if (!$this->hasPk()) {
             return false;
         }
-
+        
         $this->getDetail();
-
+        
         if (!isset($this->detail[$field])) {
             return false;
         }
-
+        
         if ($this->getHandle() == 'String') {
             $data = $this->detail;
             $data[$field] = $value;
@@ -587,19 +589,19 @@ abstract class BaseCache
         } else {
             self::getRedis($this->redisPool)->hSet($this->cacheKey, $field, $value);
         }
-
+        
         $data = [$field => $this->detail[$field]];
         $this->dealUpdateCacheExt($data);
-
+        
         $this->ttl();
-
+        
         $this->detail[$field] = $value;
-
+        
         $this->saveCacheExt();
-
+        
         return true;
     }
-
+    
     /**
      * 更新多个字段的缓存
      * @param array $data
@@ -611,31 +613,31 @@ abstract class BaseCache
         if (!$this->hasPk()) {
             return false;
         }
-
+        
         $this->getDetail();
         if (empty($this->detail)) {
             return false;
         }
-
+        
         foreach ($data as $field => $value) {
             if (!isset($this->detail[$field])) {
                 unset($data[$field]);
             }
         }
-
+        
         if (empty($data)) {
             return false;
         }
-
+        
         $this->detail = array_merge($this->detail, $data);
-
+        
         $this->dealUpdateCacheExt($data);
-
+        
         $this->saveCache();
-
+        
         return true;
     }
-
+    
     /**
      * 直接设置缓存详情并保存
      * @param $detail
@@ -646,7 +648,7 @@ abstract class BaseCache
         if (!$this->hasPk()) {
             return;
         }
-
+        
         if (is_object($detail)) {
             if (get_class($detail) == 'stdClass') {
                 $detail = get_object_vars($detail);
@@ -658,7 +660,7 @@ abstract class BaseCache
         $this->dealUpdateCacheExt($this->detail);
         $this->saveCache();
     }
-
+    
     /**
      * 清除详情缓存
      */
@@ -669,10 +671,10 @@ abstract class BaseCache
         }
         $this->detail = null;
         self::getRedis($this->redisPool)->del($this->cacheKey);
-
+        
         $this->delCacheExt();
     }
-
+    
     /**
      * 判断缓存是否存在
      * @return bool
@@ -683,9 +685,9 @@ abstract class BaseCache
         $detail = $this->getDetail();
         return !$detail;
     }
-
+    
     //region ---关联列表缓存类处理---
-
+    
     /**
      * @param $class
      * @return BaseSortSetCache|BaseUnSortSetCache
@@ -695,11 +697,11 @@ abstract class BaseCache
         if (!isset($this->related[$class])) {
             $this->related[$class] = new $class($this->getRedisPool(), $this->pk);
         }
-
+        
         return $this->related[$class];
     }
     //endregion
-
+    
     /**
      * 是否为空缓存
      * @param $key
@@ -709,7 +711,7 @@ abstract class BaseCache
     {
         return self::getRedis($this->redisPool)->exists($this->getNullKey($key));
     }
-
+    
     /**
      * 设置空缓存，解决缓存穿透的问题
      * @param $key
@@ -721,7 +723,7 @@ abstract class BaseCache
         $ttl = $ttl + random_int(0, 10);
         self::getRedis($this->redisPool)->setex($this->getNullKey($key), $ttl, 1);
     }
-
+    
     /**
      * 获取空缓存键名
      * @param $key
@@ -731,7 +733,7 @@ abstract class BaseCache
     {
         return $key . '.null';
     }
-
+    
     /**
      * 移除空缓存
      * @param $key
@@ -767,7 +769,7 @@ abstract class BaseCache
             }
         );*/
     }
-
+    
     /**
      * 计算排序值，sort值升序，时间倒序
      * @param $item
@@ -779,10 +781,10 @@ abstract class BaseCache
         if (is_array($item)) {
             return ($item['sort'] + 1) * 10000000000 + $item[$pkField];
         }
-
+        
         return ($item->sort + 1) * 10000000000 + $item->$pkField;
     }
-
+    
     /**
      * 获取主键字段名
      * @return string
@@ -791,7 +793,7 @@ abstract class BaseCache
     {
         return 'id';
     }
-
+    
     /**
      * 批量获取详情缓存
      * @param string $poolName
@@ -806,7 +808,7 @@ abstract class BaseCache
         {
             return [];
         }
-
+        
         $key = 0;
         $cacheObjArr = [];
         $cachePkField = static::getPkField(); // 缓存主键
@@ -821,26 +823,34 @@ abstract class BaseCache
         {
             $cacheObj = new static($pk, $poolName);
             // 取部分字段
-            if ($fieldArr)
-            {
-                $redisPipe->hMGet($cacheObj->cacheKey, $fieldArr);
-            }
-            // 全部字段
-            else
-            {
-                $redisPipe->hGetAll($cacheObj->cacheKey);
+            if ($cacheObj->getHandle() == 'String') {
+                $redisPipe->get($cacheObj->cacheKey);
+            } else {
+                if ($fieldArr) {
+                    $redisPipe->hMGet($cacheObj->cacheKey, $fieldArr);
+                } // 全部字段
+                else {
+                    $redisPipe->hGetAll($cacheObj->cacheKey);
+                }
             }
             $cacheObjArr[$key++] = $cacheObj;
         }
         $list = $redisPipe->exec();
-
+        
         // 处理结果
         $ret = [];
         // 指定键字段名，且在查询字段范围或全部字段
         $pointedKeyName = $keyName && (in_array($keyName, $fieldArr) || empty($fieldArr));
-
+        
         foreach ($list as $key => $item)
         {
+            if ($item && $cacheObjArr[$key]->getHandle() == 'String') {
+                if ($cacheObjArr[$key]->serialize) {
+                    $item = unserialize($item);
+                } else {
+                    $item = json_decode($item, true);
+                }
+            }
             // 如果当前key没有命中缓存,取全部字段时,item=[],取部分字段时,其字段全等于false(此时使用缓存主键判别)
             if (!$item || false === $item[$cachePkField])
             {
@@ -850,7 +860,7 @@ abstract class BaseCache
             if ($item)
             {
                 $cacheObjArr[$key]->dealDetailExt($item);
-
+                
                 if ($fieldArr)
                 {
                     $item = filterArrKeys($item, $fieldArr);
@@ -867,7 +877,7 @@ abstract class BaseCache
                 }
             }
         }
-
+        unset($cacheObjArr);
         return $ret;
     }
 }

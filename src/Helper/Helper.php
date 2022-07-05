@@ -1,7 +1,5 @@
 <?php
 
-namespace Douyu\HyperfCache\Helper;
-
 if (!function_exists('filterArrKeys')) {
     /**
      * 过滤数组中的key

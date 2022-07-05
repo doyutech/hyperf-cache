@@ -9,18 +9,18 @@ namespace Douyu\HyperfCache\Base;
  */
 abstract class BaseSortSetCache extends BaseCache
 {
-
+    
     public function __construct($pk = '', string $redisPool = 'default')
     {
         parent::__construct($pk);
-
+        
         $this->setHandle('SortedSet');    //有序集合
-
+        
         $this->setRedisPool($redisPool);
     }
-
+    
     protected function fromDb() {}
-
+    
     /**
      * @param array ...$args
      * @return string
@@ -29,9 +29,9 @@ abstract class BaseSortSetCache extends BaseCache
     {
         return $this->cacheKey;
     }
-
+    
     //region ---对象下的列表缓存---
-
+    
     /**
      *  加入列表缓存
      * @param string|int $itemPk 数据标识，一般是主键
@@ -49,7 +49,7 @@ abstract class BaseSortSetCache extends BaseCache
         }
         return self::getRedis($this->getRedisPool())->zAdd($this->getListCacheKey(...$args), $sort, $itemPk);
     }
-
+    
     /**
      * 是否存在
      * @param string|int $itemPk 数据标识，一般是主键
@@ -63,7 +63,7 @@ abstract class BaseSortSetCache extends BaseCache
         }
         return self::hasInSortedList($this->getRedisPool(), $this->getListCacheKey(...$args), $itemPk);
     }
-
+    
     /**
      * 从列表缓存中移除某项
      * @param string|int $itemPk 数据标识，一般是主键
@@ -78,10 +78,10 @@ abstract class BaseSortSetCache extends BaseCache
         if (!$itemPk) {
             return false;
         }
-
+        
         return self::getRedis($this->getRedisPool())->zRem($this->getListCacheKey(...$args), $itemPk);
     }
-
+    
     /**
      * 删除多个zset的member
      * @param array $members
@@ -94,7 +94,7 @@ abstract class BaseSortSetCache extends BaseCache
         }
         return self::getRedis($this->getRedisPool())->zRem($this->getListCacheKey(), ...$members);
     }
-
+    
     /**
      * 删除zset中member<$maxMember的元素,不包含$maxMember
      * @param int $maxMember
@@ -107,7 +107,7 @@ abstract class BaseSortSetCache extends BaseCache
         }
         return self::getRedis($this->getRedisPool())->zRemRangeByLex($this->getListCacheKey(), '-', '(' . $maxMember);
     }
-
+    
     /**
      * 获取列表缓存的元素数量
      * @param array ...$args
@@ -120,7 +120,7 @@ abstract class BaseSortSetCache extends BaseCache
         }
         return self::getSortedListLen($this->getRedisPool(), $this->getListCacheKey(...$args));
     }
-
+    
     /**
      * 获取列表缓存的元素数量（在[$startScore,$endScore]之间）
      * @param array ...$args
@@ -135,8 +135,8 @@ abstract class BaseSortSetCache extends BaseCache
         }
         return self::getSortedListLenExt($this->getRedisPool(), $this->getListCacheKey(...$args), $startScore, $endScore);
     }
-
-
+    
+    
     public function getLengthByLex(int $startMember = 0, int $endMember = 0, ...$args): int
     {
         if (empty($this->pk) && !$this->allowPkNull) return 0;
@@ -159,8 +159,8 @@ abstract class BaseSortSetCache extends BaseCache
         if (empty($this->pk) && !$this->allowPkNull) {
             return [];
         }
-//        self::isReset($this->cacheKey);
-
+        //        self::isReset($this->cacheKey);
+        
         if($sortType == 2){
             $score = $startScore;
             $startScore = $endScore;
@@ -177,7 +177,7 @@ abstract class BaseSortSetCache extends BaseCache
             $sortType
         );
     }
-
+    
     /**
      * 获取列表
      * @param int $startScore
@@ -193,8 +193,8 @@ abstract class BaseSortSetCache extends BaseCache
         if (empty($this->pk) && !$this->allowPkNull) {
             return [];
         }
-//        self::isReset($this->cacheKey);
-
+        //        self::isReset($this->cacheKey);
+        
         return self::getSortedListKey(
             $this->getRedisPool(),
             $this->getListCacheKey(...$args),
@@ -206,7 +206,7 @@ abstract class BaseSortSetCache extends BaseCache
             $sortType
         );
     }
-
+    
     /**
      * 依据zset的member范围获取列表
      * @param int $sortType
@@ -222,7 +222,7 @@ abstract class BaseSortSetCache extends BaseCache
         if (empty($this->pk) && !$this->allowPkNull) {
             return [];
         }
-
+        
         if ($sortType == 2) {
             $member = $startMember;
             $startMember = $endMember;
@@ -238,7 +238,7 @@ abstract class BaseSortSetCache extends BaseCache
             $sortType
         );
     }
-
+    
     /**
      * 删除列表缓存
      * @param array ...$args
@@ -251,7 +251,7 @@ abstract class BaseSortSetCache extends BaseCache
         }
         return self::getRedis($this->getRedisPool())->del($this->getListCacheKey(...$args));
     }
-
+    
     /**
      * 设置过期时间
      * @param $ttl

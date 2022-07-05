@@ -40,7 +40,7 @@ class LockUtil
             } else if ($tryNum) {
                 //未获得锁，协程阻塞
                 --$tryNum;
-                \Swoole\Coroutine\System::sleep(1);
+                \Swoole\Coroutine\System::sleep(0.1);
             } else {
                 //未获得锁，不阻塞
                 break;
